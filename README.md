@@ -255,6 +255,71 @@ make help
 ./pem_encode -V 4 --vbr-min 96 --vbr-max 256 input.wav output.mp3
 ```
 
+### Psychoacoustic Tuning
+
+The encoder provides fine-grained control over the psychoacoustic model for optimizing audio quality.
+
+```bash
+# Use a tuning preset
+./pem_encode --preset quality input.wav output.mp3
+./pem_encode --preset voice input.wav output.mp3
+
+# Adjust individual parameters
+./pem_encode --ath 50 --temporal 30 --gain -5 input.wav output.mp3
+```
+
+#### Tuning Presets
+
+| Preset | Description | Best For |
+|--------|-------------|----------|
+| `default` | Balanced quality and size | General purpose |
+| `quality` | Less aggressive masking | High fidelity |
+| `speed` | More aggressive masking | Fast encoding |
+| `voice` | Optimized for speech | Podcasts, audiobooks |
+| `music` | Balanced for music | Songs, albums |
+| `bass` | Enhanced low frequencies | Electronic, hip-hop |
+| `transparent` | Near-transparent quality | Archival, masters |
+
+#### Tuning Parameters
+
+| Parameter | Range | Default | Description |
+|-----------|-------|---------|-------------|
+| `--ath N` | 0-100 | 0 | ATH (Absolute Threshold of Hearing) sensitivity |
+| `--temporal N` | 0-100 | 50 | Frame-to-frame scalefactor smoothing |
+| `--gain N` | -20 to +20 | 0 | Global gain offset (negative = higher quality) |
+
+### Stereo Mode Options
+
+Control how stereo audio is encoded for optimal quality or file size.
+
+```bash
+# Force specific stereo mode
+./pem_encode --stereo-mode adaptive input.wav output.mp3
+
+# Adjust MS stereo threshold
+./pem_encode --ms-threshold 30 input.wav output.mp3
+
+# Control stereo width
+./pem_encode --stereo-width 80 input.wav output.mp3
+```
+
+#### Stereo Modes
+
+| Mode | Description |
+|------|-------------|
+| `auto` | Automatic selection (default) |
+| `stereo` | Simple L/R stereo encoding |
+| `joint` | Joint stereo (MS encoding) |
+| `ms` | Mid-side only, no switching |
+| `adaptive` | Adaptive MS with per-coefficient decisions |
+
+#### Stereo Parameters
+
+| Parameter | Range | Default | Description |
+|-----------|-------|---------|-------------|
+| `--ms-threshold N` | 0-100 | 50 | MS threshold (lower = wider stereo image) |
+| `--stereo-width N` | 0-100 | 50 | Stereo width (0=narrow, 100=wide) |
+
 ### Quality Presets
 
 | Preset | Bitrate Range | Quality |
@@ -317,6 +382,8 @@ mp3-fixed-encoder/
 │       ├── polyphase.c  # Polyphase analysis filter bank
 │       ├── hybrid.c     # MDCT and aliasing butterfly
 │       ├── psy.c        # Psychoacoustic model
+│       ├── psy_tuning.c # Psychoacoustic tuning parameters
+│       ├── psy_tuning.h # Tuning interface header
 │       ├── quant.c      # Quantization and rate control
 │       ├── huffman.c    # Huffman encoding tables
 │       ├── out.c        # Bitstream formatting

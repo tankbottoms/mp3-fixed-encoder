@@ -1,12 +1,27 @@
 # TODO - PEM Fixed-Point MP3 Encoder
 
-## Low Priority
+## Future Enhancements
 
-- [ ] Add psychoacoustic model tuning options
-- [ ] Implement joint stereo improvements
+- [ ] Add short block detection for transient audio
+- [ ] Implement intensity stereo mode
+- [ ] Add pre-emphasis support
+- [ ] Support 22.05 kHz and 24 kHz sample rates (MPEG-2 Layer III)
+- [ ] Add Replay Gain calculation and tagging
+- [ ] Support AIFF input format
 
 ## Completed
 
+- [x] Add psychoacoustic model tuning options (v1.2.0)
+  - Configurable masking threshold, ATH sensitivity, temporal blend
+  - Scalefactor multiplier and global gain offset
+  - Seven tuning presets: default, quality, speed, voice, music, bass, transparent
+  - CLI options: --preset, --ath, --temporal, --gain
+- [x] Implement joint stereo improvements (v1.2.0)
+  - Five stereo modes: auto, stereo, joint, ms, adaptive
+  - Configurable MS stereo threshold
+  - High-frequency side channel cutoff
+  - Stereo width control
+  - CLI options: --stereo-mode, --ms-threshold, --stereo-width
 - [x] Add VBR (Variable Bitrate) support
   - Per-frame bitrate selection based on audio complexity from psychoacoustic model
   - CLI option: -V quality (0=highest quality, 9=lowest)
