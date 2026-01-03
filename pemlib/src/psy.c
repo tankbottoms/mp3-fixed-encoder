@@ -38,8 +38,25 @@
 #include "types.h"
 #include "psy.h"
 #include "memory.h"
+#include "psy_tuning.h"
 
 #define max(a, b) ((a) > (b) ? (a) : (b))
+
+/*
+ * Absolute Threshold of Hearing (ATH) table in dB SPL.
+ * Approximation for 21 scalefactor bands at 44.1 kHz.
+ * Values represent minimum audible levels for each band.
+ */
+static const int32_t ath_table[21] = {
+    /* Bands 0-5: 0-1.7 kHz - lower frequencies need higher threshold */
+    0x600000, 0x400000, 0x300000, 0x280000, 0x240000, 0x200000,
+    /* Bands 6-10: 1.7-4 kHz - most sensitive hearing range */
+    0x1C0000, 0x180000, 0x140000, 0x100000, 0x0E0000,
+    /* Bands 11-15: 4-8 kHz - sensitivity decreasing */
+    0x120000, 0x160000, 0x1A0000, 0x1E0000, 0x220000,
+    /* Bands 16-20: 8-16 kHz - high frequency rolloff */
+    0x280000, 0x300000, 0x400000, 0x500000, 0x600000
+};
 
 
 void start_scalefacs(struct granule_t *gi)
@@ -142,13 +159,20 @@ void calc_lthr(int ch)
 {
 	int i;
 	fixed16 lt;
+	const encoder_tuning_t *tuning = psy_tuning_get();
+	int32_t mask_offset = tuning->psy.mask_threshold_offset;
+	int ath_sens = tuning->psy.ath_sensitivity;
 
 	for (i = 0; i < maxpb[ch]; i++) {
-		lt = FASTVAR(lebs)[i] - 0x90000;
+		lt = FASTVAR(lebs)[i] - mask_offset;
 
-/* absolute threshold */
-///		if (db_bands[i] > lt)
-///			lt = db_bands[i];
+		/* Apply Absolute Threshold of Hearing if enabled */
+		if (ath_sens > 0) {
+			/* Scale ATH by sensitivity (0-100) */
+			int32_t ath_scaled = (ath_table[i] * ath_sens) / 100;
+			if (ath_scaled > lt)
+				lt = ath_scaled;
+		}
 
 		FASTVAR(lthr)[i] = lt;
 	}
@@ -159,13 +183,21 @@ void calc_lthr(int ch)
 void calc_sf(int ch)
 {
 	int i;
+	const encoder_tuning_t *tuning = psy_tuning_get();
+
+	/*
+	 * sf_multiplier controls frequency allocation:
+	 * - Lower values (0-40): More bits to high frequencies
+	 * - Default (50): Balanced, uses multiplier 25000
+	 * - Higher values (60-100): More bits to low frequencies
+	 *
+	 * Map 0-100 to range 15000-35000
+	 */
+	int sf_mult = tuning->psy.sf_multiplier;
+	int32_t mult = 15000 + (sf_mult * 200);  /* 0->15000, 50->25000, 100->35000 */
 
 	for (i = 0; i < maxpb[ch]; i++)
-//		FASTVAR(sf)[i] = fm16(16000, FASTVAR(lthr)[i] - 3 * FASTVAR(leb)[i]);
-//		FASTVAR(sf)[i] = fm16(20000, FASTVAR(lthr)[i] - 2 * FASTVAR(leb)[i]);  // original
-		FASTVAR(sf)[i] = fm16(25000, FASTVAR(lthr)[i] - 2 * FASTVAR(leb)[i]);  // original
-//		FASTVAR(sf)[i] = fm16(24000, FASTVAR(lthr)[i] - FASTVAR(leb)[i]);
-//		FASTVAR(sf)[i] = fm16(10000, 4 * FASTVAR(lthr)[i] - 3 * FASTVAR(leb)[i]);
+		FASTVAR(sf)[i] = fm16(mult, FASTVAR(lthr)[i] - 2 * FASTVAR(leb)[i]);
 }
 
 
@@ -203,7 +235,11 @@ void norm_sf(struct granule_t *gi, int ch)
 		FASTVAR(sf)[i] = (FASTVAR(sf)[i] - sum) / 2 + ftof16(1.2f);
 
 //fprintf(stderr, "wanted gain: %12.6f\n", max);
-gi->global_gain = max/65536 + 170; // adjustment for bitrate && a safe margin
+{
+	const encoder_tuning_t *tuning = psy_tuning_get();
+	/* Apply user-configurable gain offset (-20 to +20) */
+	gi->global_gain = max/65536 + 170 + tuning->psy.gain_offset;
+}
 
 //fprintf(stderr, "%3d ", gi->global_gain);
 }
@@ -228,20 +264,57 @@ void calc_scalefacs(int ch, struct granule_t *gi)
 	
 	if (FASTVAR(mpeg).ms_stereo) {
 		int i;
-		
-		
-		
+		const encoder_tuning_t *tuning = psy_tuning_get();
+		stereo_mode_t mode = tuning->stereo.mode;
+		int ms_thresh = tuning->stereo.ms_threshold;
+		int hf_cutoff = tuning->stereo.hf_cutoff_band;
+		int stereo_width = tuning->stereo.stereo_width;
+
+		/* Convert threshold 0-100 to scaling factor */
+		/* Lower threshold = keep more side channel (0 -> 50%, 100 -> 150%) */
+		int32_t thresh_scale = 32768 + ((100 - ms_thresh) * 655);  /* 0.5 to 1.5 range */
+
+		/* Stereo width affects how much we preserve side channel */
+		/* width 0 = near-mono, width 100 = full stereo */
+		int32_t width_scale = (stereo_width * 65536) / 100;
+
 		if (!ch) {	// mid channel
 			for (i = 0; i < 144; i++)
 				FASTVAR(enm)[i] = max(FASTVAR(xr)[2*i], FASTVAR(xr)[2*i+1]);
 		} else {	// side channel
-			for (i = 0; i < 144; i++) {
-				fixed16 ens = max(FASTVAR(xr)[2*i], FASTVAR(xr)[2*i+1]);
-				if (ens < fm16(enfac[i], FASTVAR(enm)[i]))
+			/* Calculate cutoff sample index from band number */
+			int hf_cutoff_sample = (hf_cutoff == 0) ? 576 : sbo[hf_cutoff > 21 ? 21 : hf_cutoff];
+
+			if (mode == STEREO_MODE_STEREO) {
+				/* Simple stereo - don't zero anything */
+				/* No modification to side channel */
+			} else if (mode == STEREO_MODE_ADAPTIVE_MS && tuning->stereo.adaptive_ms) {
+				/* Adaptive MS: make per-coefficient decisions with width control */
+				for (i = 0; i < 144 && (2*i) < hf_cutoff_sample; i++) {
+					fixed16 ens = max(FASTVAR(xr)[2*i], FASTVAR(xr)[2*i+1]);
+					/* Apply width scaling to enfac threshold */
+					int32_t scaled_enfac = fm16(enfac[i], thresh_scale);
+					scaled_enfac = fm16(scaled_enfac, width_scale);
+					if (ens < fm16(scaled_enfac, FASTVAR(enm)[i])) {
+						FASTVAR(xr)[2*i] = FASTVAR(xr)[2*i+1] = 0;
+					}
+				}
+				/* Zero high frequencies above cutoff */
+				for (i = hf_cutoff_sample / 2; i < 288; i++)
+					FASTVAR(xr)[2*i] = FASTVAR(xr)[2*i+1] = 0;
+			} else {
+				/* Standard MS stereo with tunable threshold */
+				for (i = 0; i < 144; i++) {
+					fixed16 ens = max(FASTVAR(xr)[2*i], FASTVAR(xr)[2*i+1]);
+					/* Apply threshold scaling */
+					int32_t scaled_enfac = fm16(enfac[i], thresh_scale);
+					if (ens < fm16(scaled_enfac, FASTVAR(enm)[i]))
+						FASTVAR(xr)[2*i] = FASTVAR(xr)[2*i+1] = 0;
+				}
+				/* Zero high frequencies above cutoff band */
+				for (i = hf_cutoff_sample / 2; i < 288; i++)
 					FASTVAR(xr)[2*i] = FASTVAR(xr)[2*i+1] = 0;
 			}
-			for ( ; i < 288; i++)
-				FASTVAR(xr)[2*i] = FASTVAR(xr)[2*i+1] = 0;
 		}
 	}
 	
@@ -270,19 +343,36 @@ void compute_scalefacs(int ch, struct granule_t *gi)
 	fixed16 mean;
 	fixed16 o[21];
 	fixed16 min;
+	const encoder_tuning_t *tuning = psy_tuning_get();
 
-//////FASTVAR(sf)[0] = 0.5f * (FASTVAR(sf)[1] + FASTVAR(sf)[2]);
+	/*
+	 * Temporal blend controls smoothing between frames:
+	 * 0 = no smoothing (current frame only)
+	 * 50 = equal blend (default, same as original)
+	 * 100 = full smoothing (mostly previous frame)
+	 */
+	int blend = tuning->psy.temporal_blend;
 
 	min = ftof16(9999);
 	mean = 0;
 	for (i = 0; i < maxpb[ch]; i++) {
 		o[i] = FASTVAR(old_sf)[ch][i];
 		FASTVAR(old_sf)[ch][i] = FASTVAR(sf)[i];
-//		FASTVAR(sf)[i] = (3.0f * FASTVAR(sf)[i] + 7.0f * o[i]) / 10.0f;
-///		FASTVAR(sf)[i] = FASTVAR(sf)[i] > o[i] ? FASTVAR(sf)[i] : o[i];
-//!		FASTVAR(sf)[i] = (i * FASTVAR(sf)[i] + (25.0f - i) * o[i]) / 25.0f;
-//!!		FASTVAR(sf)[i] = (i * o[i] + (25.0f - i) * FASTVAR(sf)[i]) / 25.0f;
-		FASTVAR(sf)[i] = (FASTVAR(sf)[i] + o[i]) / 2;
+
+		/* Apply temporal blending based on tuning */
+		if (blend == 0) {
+			/* No smoothing - use current frame only */
+			/* sf[i] stays as-is */
+		} else if (blend == 100) {
+			/* Full smoothing - mostly previous frame */
+			FASTVAR(sf)[i] = (FASTVAR(sf)[i] + 3 * o[i]) / 4;
+		} else {
+			/* Blend: map 0-100 to weight for previous frame */
+			/* blend=50 gives equal weight (original behavior) */
+			int current_weight = 100 - blend;
+			int prev_weight = blend;
+			FASTVAR(sf)[i] = (FASTVAR(sf)[i] * current_weight + o[i] * prev_weight) / 100;
+		}
 	}
 
 

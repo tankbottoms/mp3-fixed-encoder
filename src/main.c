@@ -25,8 +25,9 @@
 #include "eresult.h"
 #include "id3tag.h"
 #include "vbr.h"
+#include "psy_tuning.h"
 
-#define VERSION "1.1.0"
+#define VERSION "1.2.0"
 #define SAMPLES_PER_FRAME 1152
 
 /* WAV file header structure */
@@ -88,7 +89,17 @@ static void print_usage(const char *prog_name)
     fprintf(stderr, "  --genre      Set genre number (0-255)\n");
     fprintf(stderr, "  --id3v1      Write ID3v1 tag only (default: both v1 and v2)\n");
     fprintf(stderr, "  --id3v2      Write ID3v2 tag only\n");
-    fprintf(stderr, "  --no-id3     Don't write any ID3 tags\n");
+    fprintf(stderr, "  --no-id3     Don't write any ID3 tags\n\n");
+    fprintf(stderr, "Psychoacoustic Tuning:\n");
+    fprintf(stderr, "  --preset P   Use tuning preset: default, quality, balanced,\n");
+    fprintf(stderr, "               speed, voice, music, bass, transparent\n");
+    fprintf(stderr, "  --ath N      ATH sensitivity 0-100 (default: 0=disabled)\n");
+    fprintf(stderr, "  --temporal N Temporal blend 0-100 (default: 50)\n");
+    fprintf(stderr, "  --gain N     Gain offset -20 to +20 (default: 0)\n\n");
+    fprintf(stderr, "Stereo Options:\n");
+    fprintf(stderr, "  --stereo-mode M  Stereo mode: auto, stereo, joint, ms, adaptive\n");
+    fprintf(stderr, "  --ms-threshold N MS threshold 0-100 (default: 50)\n");
+    fprintf(stderr, "  --stereo-width N Stereo width 0-100 (default: 50)\n");
 }
 
 static int validate_bitrate(int bitrate)
@@ -322,6 +333,81 @@ int main(int argc, char **argv)
                     vbr_min = atoi(argv[++i]);
                 } else if (strcmp(argv[i], "--vbr-max") == 0 && i + 1 < argc) {
                     vbr_max = atoi(argv[++i]);
+                } else if (strcmp(argv[i], "--preset") == 0 && i + 1 < argc) {
+                    const char *preset_name = argv[++i];
+                    tuning_preset_t preset = TUNING_PRESET_DEFAULT;
+                    if (strcmp(preset_name, "quality") == 0) {
+                        preset = TUNING_PRESET_QUALITY;
+                    } else if (strcmp(preset_name, "balanced") == 0) {
+                        preset = TUNING_PRESET_BALANCED;
+                    } else if (strcmp(preset_name, "speed") == 0) {
+                        preset = TUNING_PRESET_SPEED;
+                    } else if (strcmp(preset_name, "voice") == 0) {
+                        preset = TUNING_PRESET_VOICE;
+                    } else if (strcmp(preset_name, "music") == 0) {
+                        preset = TUNING_PRESET_MUSIC;
+                    } else if (strcmp(preset_name, "bass") == 0) {
+                        preset = TUNING_PRESET_BASS;
+                    } else if (strcmp(preset_name, "transparent") == 0) {
+                        preset = TUNING_PRESET_TRANSPARENT;
+                    } else if (strcmp(preset_name, "default") != 0) {
+                        fprintf(stderr, "Error: Unknown preset '%s'\n", preset_name);
+                        fprintf(stderr, "Valid presets: default, quality, balanced, speed, voice, music, bass, transparent\n");
+                        return 1;
+                    }
+                    psy_tuning_apply_preset(NULL, preset);
+                } else if (strcmp(argv[i], "--ath") == 0 && i + 1 < argc) {
+                    int ath = atoi(argv[++i]);
+                    if (ath < 0 || ath > 100) {
+                        fprintf(stderr, "Error: ATH sensitivity must be 0-100\n");
+                        return 1;
+                    }
+                    psy_set_ath_sensitivity(ath);
+                } else if (strcmp(argv[i], "--temporal") == 0 && i + 1 < argc) {
+                    int temporal = atoi(argv[++i]);
+                    if (temporal < 0 || temporal > 100) {
+                        fprintf(stderr, "Error: Temporal blend must be 0-100\n");
+                        return 1;
+                    }
+                    psy_set_temporal_blend(temporal);
+                } else if (strcmp(argv[i], "--gain") == 0 && i + 1 < argc) {
+                    int gain = atoi(argv[++i]);
+                    if (gain < -20 || gain > 20) {
+                        fprintf(stderr, "Error: Gain offset must be -20 to +20\n");
+                        return 1;
+                    }
+                    psy_set_gain_offset(gain);
+                } else if (strcmp(argv[i], "--stereo-mode") == 0 && i + 1 < argc) {
+                    const char *mode_name = argv[++i];
+                    stereo_mode_t mode = STEREO_MODE_AUTO;
+                    if (strcmp(mode_name, "stereo") == 0) {
+                        mode = STEREO_MODE_STEREO;
+                    } else if (strcmp(mode_name, "joint") == 0) {
+                        mode = STEREO_MODE_JOINT;
+                    } else if (strcmp(mode_name, "ms") == 0) {
+                        mode = STEREO_MODE_MS_ONLY;
+                    } else if (strcmp(mode_name, "adaptive") == 0) {
+                        mode = STEREO_MODE_ADAPTIVE_MS;
+                    } else if (strcmp(mode_name, "auto") != 0) {
+                        fprintf(stderr, "Error: Unknown stereo mode '%s'\n", mode_name);
+                        fprintf(stderr, "Valid modes: auto, stereo, joint, ms, adaptive\n");
+                        return 1;
+                    }
+                    stereo_set_mode(mode);
+                } else if (strcmp(argv[i], "--ms-threshold") == 0 && i + 1 < argc) {
+                    int thresh = atoi(argv[++i]);
+                    if (thresh < 0 || thresh > 100) {
+                        fprintf(stderr, "Error: MS threshold must be 0-100\n");
+                        return 1;
+                    }
+                    stereo_set_ms_threshold(thresh);
+                } else if (strcmp(argv[i], "--stereo-width") == 0 && i + 1 < argc) {
+                    int width = atoi(argv[++i]);
+                    if (width < 0 || width > 100) {
+                        fprintf(stderr, "Error: Stereo width must be 0-100\n");
+                        return 1;
+                    }
+                    stereo_set_width(width);
                 } else if (strcmp(argv[i], "--help") == 0) {
                     print_usage(argv[0]);
                     return 0;

@@ -50,6 +50,7 @@ PEMLIB_SOURCES = $(PEMLIB_SRC)/workspace.c \
                  $(PEMLIB_SRC)/polyphase.c \
                  $(PEMLIB_SRC)/hybrid.c \
                  $(PEMLIB_SRC)/psy.c \
+                 $(PEMLIB_SRC)/psy_tuning.c \
                  $(PEMLIB_SRC)/quant.c \
                  $(PEMLIB_SRC)/code.c \
                  $(PEMLIB_SRC)/count.c \
