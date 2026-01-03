@@ -1,0 +1,116 @@
+# Fixed-Point MP3 Encoder - Git Ignore Configuration
+# Copyright (C) 2025 Mark Phillips
+
+# =============================================================================
+# Build Artifacts
+# =============================================================================
+
+# Compiled object files
+*.o
+*.a
+*.so
+*.dylib
+
+# Executables
+pem_encode
+pem_encode.exe
+
+# Tool binaries
+tools/wav_generator
+tools/wav_analyzer
+tools/mp3_info
+tools/mp3_debug
+
+# Debug symbols
+*.dSYM/
+
+# Build directory
+build/
+
+# =============================================================================
+# Generated Test Files
+# =============================================================================
+
+# Generated WAV files (regenerate with: make generate-samples)
+samples/*.wav
+
+# Encoded MP3 test files (regenerate with: make encode-samples)
+samples/*.mp3
+
+# Comparison and test outputs (regenerate with: make roundtrip-test)
+samples/comparison/
+samples/reference/
+samples/roundtrip/
+samples/test/
+
+# =============================================================================
+# IDE and Editor Files
+# =============================================================================
+
+# Visual Studio Code
+.vscode/
+
+# JetBrains IDEs
+.idea/
+
+# Xcode
+*.xcodeproj/
+*.xcworkspace/
+xcuserdata/
+DerivedData/
+
+# Vim/Neovim
+*.swp
+*.swo
+*~
+
+# Emacs
+\#*\#
+.dir-locals.el
+
+# =============================================================================
+# macOS System Files
+# =============================================================================
+
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+@eaDir/
+
+# =============================================================================
+# Claude or Code Indexers
+# =============================================================================
+
+.claude/
+.github-commit-messages
+.osgrep
+.gemini
+
+# =============================================================================
+# Debugging and Profiling
+# =============================================================================
+
+# Core dumps
+core
+core.*
+vgcore.*
+
+# Profiling output
+*.gcda
+*.gcno
+*.gcov
+gmon.out
+perf.data
+
+# Address sanitizer logs
+asan.log.*
+
+# =============================================================================
+# Temporary and Backup Files
+# =============================================================================
+
+*.tmp
+*.temp
+*.log
+*.bak

@@ -1,0 +1,171 @@
+FIXED-POINT MP3 ENCODER - LICENSE AGREEMENT
+
+Copyright (C) 1998-2025 Mark Phillips. All rights reserved.
+
+ORIGINAL CODE ATTRIBUTION
+
+This software incorporates MP3 encoder code originally developed by Segher
+Boessenkool and acquired through Interactive Objects, Inc. and FullPlay Media
+Systems, Inc. (1998-2001). The original encoder provided the foundational MP3
+encoding algorithms which were subsequently optimized for embedded systems.
+
+Original development contributions:
+
+- Segher Boessenkool: Core fixed-point MP3 encoding algorithm
+- Interactive Objects, Inc.: Embedded platform integration
+- FullPlay Media Systems, Inc.: Commercial deployment optimization
+
+All source code assets, intellectual property rights, and commercial rights
+were acquired by Mark Phillips and further developed for modern platforms.
+
+The original encoder source code served as the reference implementation for:
+
+- Fixed-point MDCT (Modified Discrete Cosine Transform)
+- Polyphase analysis filter bank
+- Psychoacoustic model for perceptual encoding
+- Huffman encoding and bitstream formatting
+- Bit reservoir management
+
+All modern platform adaptations (LP64 compatibility, ARM64 optimization,
+sanitizer compliance) were developed by Mark Phillips (2025).
+
+================================================================================
+NON-COMMERCIAL USE LICENSE
+================================================================================
+
+GRANT OF LICENSE
+
+Subject to the terms and conditions of this license, Mark Phillips ("Licensor")
+grants you a limited, non-exclusive, non-transferable, revocable license to
+use this software solely for personal, educational, and non-commercial research
+purposes.
+
+RESTRICTIONS
+
+1. COMMERCIAL USE PROHIBITED
+
+   You may NOT use this software, in whole or in part, for any commercial
+   purpose, including but not limited to:
+
+   - Incorporation into commercial products or services
+   - Use in revenue-generating applications or websites
+   - Distribution as part of commercial software packages
+   - Use in commercial media production or processing services
+   - Deployment in commercial embedded systems or devices
+
+   Commercial use requires a separate commercial license agreement with
+   the copyright holder.
+
+2. NO REDISTRIBUTION
+
+   You may NOT:
+
+   - Redistribute this software in source or binary form
+   - Make this software available for download
+   - Include this software in software distributions or repositories
+   - Share compiled binaries or executables derived from this software
+
+   Each user must obtain the software directly from the authorized source.
+
+3. NO DERIVATIVE WORKS FOR COMMERCIAL USE
+
+   While you may modify this software for personal use, you may NOT:
+
+   - Create derivative works for commercial purposes
+   - Distribute modified versions of this software
+   - Use modified versions in commercial products or services
+   - Sublicense any derivative works
+
+4. ATTRIBUTION REQUIRED
+
+   Any permitted use must retain:
+
+   - All copyright notices
+   - This license text
+   - Attribution to original authors
+   - Links to the original repository (if distributed with permission)
+
+PERMITTED USES
+
+You MAY use this software for:
+
+- Personal MP3 encoding and audio file conversion
+- Educational instruction and coursework
+- Academic research and publications (with proper citation)
+- Non-commercial software development and testing
+- Historical preservation and archival purposes
+- Technical evaluation and code review
+- Embedded systems research and prototyping
+
+INTELLECTUAL PROPERTY
+
+This software and all associated intellectual property rights remain the
+exclusive property of Mark Phillips. This license does not grant you any
+ownership rights to the software.
+
+The MP3 audio coding technology may be protected by patents held by third
+parties. This license does not grant any patent rights. You are responsible
+for obtaining any necessary patent licenses for your use.
+
+Note: Core MP3 patents expired in 2017, but territorial variations may apply.
+
+DISCLAIMER OF WARRANTY
+
+THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE, TITLE, AND NONINFRINGEMENT.
+
+THE COPYRIGHT HOLDER MAKES NO REPRESENTATIONS OR WARRANTIES ABOUT THE
+SUITABILITY, RELIABILITY, AVAILABILITY, ACCURACY, OR COMPLETENESS OF THIS
+SOFTWARE.
+
+LIMITATION OF LIABILITY
+
+IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE FOR ANY CLAIM, DAMAGES, OR
+OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT, OR OTHERWISE,
+ARISING FROM, OUT OF, OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+DEALINGS IN THE SOFTWARE.
+
+THIS INCLUDES, BUT IS NOT LIMITED TO:
+
+- Direct, indirect, incidental, or consequential damages
+- Loss of profits, revenue, or business opportunities
+- Loss of data or system downtime
+- Cost of substitute goods or services
+
+TERMINATION
+
+This license is effective until terminated. Your rights under this license
+will terminate automatically without notice if you fail to comply with any
+of its terms. Upon termination, you must destroy all copies of the software
+in your possession.
+
+COMMERCIAL LICENSE INQUIRIES
+
+For commercial licensing, custom development, or permission to redistribute,
+please contact Mark Phillips through the repository.
+
+GOVERNING LAW
+
+This license shall be governed by and construed in accordance with the laws
+of the jurisdiction in which the copyright holder resides, without regard to
+its conflict of law provisions.
+
+ENTIRE AGREEMENT
+
+This license constitutes the entire agreement between you and the copyright
+holder regarding the use of this software and supersedes all prior agreements
+and understandings, whether written or oral.
+
+SEVERABILITY
+
+If any provision of this license is held to be unenforceable or invalid, that
+provision will be enforced to the maximum extent possible, and the other
+provisions will remain in full force and effect.
+
+================================================================================
+
+By using this software, you acknowledge that you have read this license,
+understand it, and agree to be bound by its terms and conditions.
+
+Last Updated: January 2, 2026
